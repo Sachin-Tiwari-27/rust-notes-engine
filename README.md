@@ -1,12 +1,25 @@
-# Rust Notes Engine 🦀📝
+# 🦀 Rust Notes Engine
 
-A CLI note manager written in Rust using enums, structs, and file handling.
+A command-line note manager built in Rust to explore:
 
-## 📦 Features
-- Create and tag notes
-- Save to and load from files
-- Learn Rust's ownership, error handling, and vector patterns
+- ✅ Structs & Enums
+- ✅ Ownership & Borrowing
+- ✅ File I/O & Error Handling
+- ✅ CLI Argument Parsing (coming soon)
 
-## 🚀 Usage
+---
+
+## 🚀 Features
+
+- Add, tag, and view notes in memory
+- Save notes to local file (basic persistence)
+- Categorize notes via enums (Work, Personal, Urgent)
+
+---
+
+## 🛠 Getting Started
+
 ```bash
+git clone https://github.com/Sachin-Tiwari-27/rust-notes-engine.git
+cd rust-notes-engine
 cargo run
