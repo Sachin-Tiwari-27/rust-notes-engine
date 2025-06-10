@@ -1,6 +1,9 @@
 mod notes;
 use clap::{Parser, Subcommand};
 use notes::{Note, Tag, print_note};
+use std::fs::{self, OpenOptions};
+use std::io::{Read, Write};
+use serde_json;
 
 #[derive(clap::Parser)]
 #[command(name = "Rust Notes Engine")]
@@ -32,7 +35,7 @@ fn main() {
 
     let cli = Cli::parse();
 
-    let mut notes: Vec<Note> = Vec::new();
+    let mut notes = load_notes();
 
     match &cli.command {
         Commands::Add { title, body, tag } => {
@@ -53,6 +56,7 @@ fn main() {
             };
 
             notes.push(note);
+            save_notes(&notes);
             println!("✅ Note added.")
         }
         Commands::List => {
@@ -91,7 +95,36 @@ fn main() {
             }
         }
 
+       
+
     }
     
 
 }
+
+fn load_notes() -> Vec<Note> {
+    let mut file = match fs::File::open("notes.json") {
+        Ok(f) => f,
+        Err(_) => return Vec::new() // file not found
+    };
+
+    let mut data = String::new();
+    file.read_to_string(&mut data).expect("Failed to read file");
+
+    serde_json::from_str(&data).unwrap_or_else(|_| Vec::new())
+}
+
+fn save_notes(notes: &Vec<Note>) {
+    let data = serde_json::to_string_pretty(notes).expect("Failed to serialize notes");
+
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open("notes.json")
+        .expect("Failed to open file");
+    file.write_all(data.as_bytes()).expect("Failed to write file");
+
+}
+
+
