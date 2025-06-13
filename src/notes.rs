@@ -17,5 +17,5 @@ pub struct Note{
 }
 
 pub fn print_note(note: &Note) {
-    println!("[{:?}] {}", note.tag, note.title);
+    println!("📌[{:?}] , Title: {}, Body: {}", note.tag, note.title, note.body);
 }

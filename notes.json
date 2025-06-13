@@ -3,5 +3,15 @@
     "title": "Finish CLI",
     "body": "Today is Day 7",
     "tag": "Work"
+  },
+  {
+    "title": "Shopping",
+    "body": "Buy Eggs",
+    "tag": "Personal"
+  },
+  {
+    "title": "Finish",
+    "body": "Complete Day 8",
+    "tag": "Work"
   }
 ]

@@ -1,36 +1,14 @@
 mod notes;
-use clap::{Parser, Subcommand};
+mod cli;
+
+use cli::{Cli, Commands};
+use clap::Parser;
 use notes::{Note, Tag, print_note};
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use serde_json;
 
-#[derive(clap::Parser)]
-#[command(name = "Rust Notes Engine")]
-#[command(about = "A CLI note manager written in Rust", long_about = None)]
-struct Cli {
-    #[clap(subcommand)]
-    command: Commands,
-}
 
-#[derive(clap::Subcommand)]
-enum Commands{
-    ///Add new Note
-    Add{
-        title: String,
-        body: String,
-        tag: String,
-    },
-
-    ///List all notes
-    List,
-
-    ///Filters all notes by tag
-    Filter{
-        tag: String,
-    },
-
-}
 fn main() {
 
     let cli = Cli::parse();
@@ -95,6 +73,52 @@ fn main() {
             }
         }
 
+        Commands::Delete { title } => {
+            let initial_len = notes.len();
+            let title_lower = title.to_lowercase();
+            notes.retain(|note| note.title.to_lowercase() != title_lower);
+
+            if notes.len() < initial_len {
+                save_notes(&notes);
+                println!("🗑️ Deleted note with title: '{}'", title);
+            }
+            else {
+                println!("⚠️ No note found with title: '{}'", title);
+            }
+        }
+
+        Commands::Search { query } => {
+
+            let query_lower = query.to_lowercase();
+
+            let matched: Vec<&Note> = notes.iter().filter(|note| {
+                note.title.to_lowercase().contains(&query_lower) || 
+                note.body.to_lowercase().contains(&query_lower) ||
+                format!("{:?}", note.tag).to_lowercase().contains(&query_lower)
+            }).collect();
+
+            if matched.is_empty() {
+                println!("🔍 No notes found for query: '{}'", query);
+            }
+            else {
+                println!("🔍 Found {} notes matching '{}':", matched.len(), query);
+            for note in matched {
+                 print_note(note);
+                 }
+            }
+        
+        }
+
+        Commands::ExportMarkdown => {
+
+            if notes.is_empty() {
+                 println!("📝 No notes to export.");
+             } else {
+                 export_to_markdown(&notes);
+            }
+
+        }
+
        
 
     }
@@ -127,4 +151,25 @@ fn save_notes(notes: &Vec<Note>) {
 
 }
 
+fn export_to_markdown(notes: &Vec<Note>) {
+    let dir = "markdown_exports";
 
+    fs::create_dir_all(dir).expect("❌ Failed to create export folder");
+
+    for note in notes {
+        let filename = format!("{}/{}.md",dir,sanitize_filename(&note.title));
+        let mut file = File::create(&filename).expect("❌ Failed to create file");
+
+        let content = format!(
+            "# {}\n\n{}\n\n**Tag** {:?}\n",
+            note.title, note.body, note.tag
+        );
+
+        file.write_all(content.as_bytes()).expect("❌ Failed to write to file");
+        println!("✅ Exported: {}", filename);
+    }
+}
+
+fn sanitize_filename(title: &str) -> String {
+    title.replace("/", "-").replace("\\", "-").replace(" ", "_")
+}
