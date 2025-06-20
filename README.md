@@ -30,30 +30,30 @@ cargo run
 ```
 // Updated Folder Structure with Modular Commands
 
-// ├── src/
-// │   ├── main.rs
-// │   ├── cli.rs
-// │   ├── models.rs
-// │   ├── errors.rs
-// │   ├── storage.rs
-// │   └── commands/
-// │       ├── mod.rs
-// │       ├── add/
-// │       │   ├── mod.rs
-// │       │   └── tests.rs
-// │       ├── update/
-// │       │   ├── mod.rs
-// │       │   └── tests.rs
-// │       ├── delete/
-// │       │   ├── mod.rs
-// │       │   └── tests.rs
-// │       ├── search/
-// │       │   └── mod.rs
-// │       ├── export_to_markdown/
-// │       │   └── mod.rs
-// │       └── tests.rs   // optional shared test utilities
-// └── tests/
-//     └── integration.rs
+├── src/
+│   ├── main.rs
+│   ├── cli.rs
+│   ├── models.rs
+│   ├── errors.rs
+│   ├── storage.rs
+│   └── commands/
+│       ├── mod.rs
+│       ├── add/
+│       │   ├── mod.rs
+│       │   └── tests.rs
+│       ├── update/
+│       │   ├── mod.rs
+│       │   └── tests.rs
+│       ├── delete/
+│       │   ├── mod.rs
+│       │   └── tests.rs
+│       ├── search/
+│       │   └── mod.rs
+│       ├── export_to_markdown/
+│       │   └── mod.rs
+│       └── tests.rs   // optional shared test utilities
+└── tests/
+     └── integration.rs
 ---
 
 ## 🧑‍💻 Usage
