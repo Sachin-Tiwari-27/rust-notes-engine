@@ -13,5 +13,20 @@
     "title": "Finish",
     "body": "Complete Day 8",
     "tag": "Work"
+  },
+  {
+    "title": "Today 2",
+    "body": "Work with my team",
+    "tag": "Work"
+  },
+  {
+    "title": "Test CLI",
+    "body": "CLI Body",
+    "tag": "Work"
+  },
+  {
+    "title": "Test Title",
+    "body": "Test Body",
+    "tag": "Work"
   }
 ]

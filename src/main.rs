@@ -1,175 +1,76 @@
-mod notes;
 mod cli;
+mod commands;
+mod errors;
+mod models;
+mod storage;
 
-use cli::{Cli, Commands};
+use crate::commands::{
+    add::add_note, delete::delete_note, export_to_markdown::export_to_markdown,
+    search::search_note, update::update_note,
+};
+use crate::{
+    models::{Tag, print_note},
+    storage::load_notes,
+};
 use clap::Parser;
-use notes::{Note, Tag, print_note};
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Write};
-use serde_json;
+use cli::{Cli, Commands};
 
+fn parsed_tag(input: &str) -> Tag {
+    match input.to_lowercase().as_str() {
+        "work" => Tag::Work,
+        "personal" => Tag::Personal,
+        "urgent" => Tag::Urgent,
+        _ => Tag::Other,
+    }
+}
 
 fn main() {
-
     let cli = Cli::parse();
-
-    let mut notes = load_notes();
 
     match &cli.command {
         Commands::Add { title, body, tag } => {
-            let parsed_tag = match tag.to_lowercase().as_str() {
-                "work" => Tag::Work,
-                "personal" => Tag::Personal,
-                "urgent" => Tag::Urgent,
-                _=> {
-                    println!("Invalid Tag, use Work, Personal, or Urgent.");
-                    return;
-                }
-            };
+            let tag_enum = parsed_tag(tag);
 
-            let note = Note {
-                title: title.clone(),
-                body: body.clone(),
-                tag: parsed_tag,
-            };
-
-            notes.push(note);
-            save_notes(&notes);
-            println!("✅ Note added.")
+            match add_note(title, body, &tag_enum) {
+                Ok(_) => println!("✅ Note added successfully!"),
+                Err(e) => eprintln!("❌ Error: {}", e),
+            }
+        }
+        Commands::Update {
+            title,
+            new_body,
+            new_tag,
+        } => {
+            let tag_enum = parsed_tag(new_tag);
+            match update_note(title, new_body, &tag_enum) {
+                Ok(_) => println!("✅ Note updated!"),
+                Err(e) => eprintln!("❌ Error: {}", e),
+            }
         }
         Commands::List => {
-            if notes.is_empty(){
-                println!("No notes yet.");
-            } else {
-                for note in &notes {
-                    print_note(note);
-                }
-            }
-
-        }
-
-        Commands::Filter {tag} => {
-            let parsed_tag = match tag.to_lowercase().as_str() {
-                "work" => Tag::Work,
-                "personal" => Tag::Personal,
-                "urgent" => Tag::Urgent,
-                _=> {
-                    println!{"Invalid tag. Use Work, Personal or Urgent."};
-                    return;
-                }
-            };
-
-            let filtered : Vec<&Note> = notes
-            .iter()
-            .filter(|n| n.tag == parsed_tag)
-            .collect();
-            
-            if filtered.is_empty(){
-                println!("No Notes found for tag {:?}", parsed_tag);
-            } else {
-                for note in filtered {
-                    print_note(note);
-                }
+            let notes = load_notes().unwrap_or_default();
+            for note in notes {
+                print_note(&note);
             }
         }
-
-        Commands::Delete { title } => {
-            let initial_len = notes.len();
-            let title_lower = title.to_lowercase();
-            notes.retain(|note| note.title.to_lowercase() != title_lower);
-
-            if notes.len() < initial_len {
-                save_notes(&notes);
-                println!("🗑️ Deleted note with title: '{}'", title);
-            }
-            else {
-                println!("⚠️ No note found with title: '{}'", title);
+        Commands::Filter { tag } => {
+            let tag_enum = parsed_tag(tag);
+            let notes = load_notes().unwrap_or_default();
+            for note in notes.iter().filter(|n| n.tag == tag_enum) {
+                print_note(note);
             }
         }
-
-        Commands::Search { query } => {
-
-            let query_lower = query.to_lowercase();
-
-            let matched: Vec<&Note> = notes.iter().filter(|note| {
-                note.title.to_lowercase().contains(&query_lower) || 
-                note.body.to_lowercase().contains(&query_lower) ||
-                format!("{:?}", note.tag).to_lowercase().contains(&query_lower)
-            }).collect();
-
-            if matched.is_empty() {
-                println!("🔍 No notes found for query: '{}'", query);
-            }
-            else {
-                println!("🔍 Found {} notes matching '{}':", matched.len(), query);
-            for note in matched {
-                 print_note(note);
-                 }
-            }
-        
-        }
-
-        Commands::ExportMarkdown => {
-
-            if notes.is_empty() {
-                 println!("📝 No notes to export.");
-             } else {
-                 export_to_markdown(&notes);
-            }
-
-        }
-
-       
-
+        Commands::Delete { title } => match delete_note(title) {
+            Ok(_) => println!("🗑️ Note deleted!"),
+            Err(e) => eprintln!("❌ Error: {}", e),
+        },
+        Commands::Search { query } => match search_note(query) {
+            Ok(note) => print_note(&note),
+            Err(e) => eprintln!("❌ Error: {}", e),
+        },
+        Commands::ExportMarkdown { output_path } => match export_to_markdown(output_path) {
+            Ok(_) => println!("✅ Note Exorted!"),
+            Err(e) => eprintln!("❌ Error: {}", e),
+        },
     }
-    
-
-}
-
-fn load_notes() -> Vec<Note> {
-    let mut file = match fs::File::open("notes.json") {
-        Ok(f) => f,
-        Err(_) => return Vec::new() // file not found
-    };
-
-    let mut data = String::new();
-    file.read_to_string(&mut data).expect("Failed to read file");
-
-    serde_json::from_str(&data).unwrap_or_else(|_| Vec::new())
-}
-
-fn save_notes(notes: &Vec<Note>) {
-    let data = serde_json::to_string_pretty(notes).expect("Failed to serialize notes");
-
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open("notes.json")
-        .expect("Failed to open file");
-    file.write_all(data.as_bytes()).expect("Failed to write file");
-
-}
-
-fn export_to_markdown(notes: &Vec<Note>) {
-    let dir = "markdown_exports";
-
-    fs::create_dir_all(dir).expect("❌ Failed to create export folder");
-
-    for note in notes {
-        let filename = format!("{}/{}.md",dir,sanitize_filename(&note.title));
-        let mut file = File::create(&filename).expect("❌ Failed to create file");
-
-        let content = format!(
-            "# {}\n\n{}\n\n**Tag** {:?}\n",
-            note.title, note.body, note.tag
-        );
-
-        file.write_all(content.as_bytes()).expect("❌ Failed to write to file");
-        println!("✅ Exported: {}", filename);
-    }
-}
-
-fn sanitize_filename(title: &str) -> String {
-    title.replace("/", "-").replace("\\", "-").replace(" ", "_")
 }
