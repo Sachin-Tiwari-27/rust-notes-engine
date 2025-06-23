@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser};
 
 #[derive(Parser)]
 #[command(name = "Rust Notes Engine")]
@@ -35,6 +35,9 @@ pub enum Commands {
 
     ///Search note matching the text
     Search { query: String },
+
+    ///Show Tag counts
+    Stats,
 
     ///Export note to a .md file
     ExportMarkdown { output_path: String },

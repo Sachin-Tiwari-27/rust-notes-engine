@@ -6,7 +6,7 @@ mod storage;
 
 use crate::commands::{
     add::add_note, delete::delete_note, export_to_markdown::export_to_markdown,
-    search::search_note, update::update_note,
+    search::search_note, update::update_note, stats::show_tag_stats
 };
 use crate::{
     models::{Tag, print_note},
@@ -67,6 +67,11 @@ fn main() {
         Commands::Search { query } => match search_note(query) {
             Ok(note) => print_note(&note),
             Err(e) => eprintln!("❌ Error: {}", e),
+        },
+        Commands::Stats {} => {
+            if let Err(e) = show_tag_stats() {
+        eprintln!("Error: {}", e);
+    }
         },
         Commands::ExportMarkdown { output_path } => match export_to_markdown(output_path) {
             Ok(_) => println!("✅ Note Exorted!"),
